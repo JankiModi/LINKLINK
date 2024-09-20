@@ -1,0 +1,177 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+const Helpers = () => {
+  const [resident, setResident] = useState([]);
+  const [helpers, setHelpers] = useState([]);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("No access token found");
+        }
+
+        const response = await axios.get("http://localhost:8000/api/getUser", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setResident(response.data);
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleAddHelper = () => {
+    navigate("/addHelper");
+  };
+
+  const handleBackToHousehold = () => {
+    navigate("/committee_household");
+  };
+
+  useEffect(() => {
+    const fetchHelpers = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("No access token found");
+        }
+        const response = await axios.get(
+          "http://localhost:8000/api/viewHelpers/",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setHelpers(response.data);
+      } catch (error) {
+        setError("Failed to fetch helpers.");
+      }
+    };
+
+    fetchHelpers();
+  }, [resident]);
+
+  const handleRemoveHelper = async (id) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("No access token found");
+      }
+      await axios.delete(`http://localhost:8000/api/removeHelper/${id}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHelpers(helpers.filter((helper) => helper.id !== id));
+      //   setSuccess("Helper removed successfully!");
+    } catch (error) {
+      setError("Failed to remove helper.");
+    }
+  };
+
+  const backPage = () => {
+    navigate("/helpers");
+  };
+
+  return (
+    <div>
+      <div className="min-h-screen bg-[#E9F1FA] p-28">
+        <Navbar />
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-3xl font-bold mb-6 text-[#1c5b70]">
+              Helpers of {resident.name}'s House
+            </h2>
+            {/* {error && <p className="text-red-500 mb-4">Error: {error}</p>} */}
+            {helpers.length > 0 ? (
+              <ul className="space-y-4 mb-8">
+                {helpers.map((helper) => (
+                  <li
+                    key={helper.id}
+                    className="flex items-center justify-between bg-gray-100 p-4 rounded-md"
+                  >
+                    <span className="text-xl font-semibold text-gray-800">
+                      {helper.name} - {helper.job} ({helper.phone_number})
+                    </span>
+                    <div className="flex space-x-2">
+                      <div className="relative group">
+                        <button
+                          onClick={handleAddHelper}
+                          className="p-2 rounded-full bg-[#1c5b70] text-white hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                          aria-label="Add Helper"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
+                        </button>
+                        <span className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 right-0 bottom-full mb-2">
+                          Add
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          onClick={() => handleRemoveHelper(helper.id)}
+                          className="p-2 rounded-full bg-[#1c5b70] text-white hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                          aria-label="Remove Helper"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M20 12H4"
+                            />
+                          </svg>
+                        </button>
+                        <span className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 right-0 bottom-full mb-2">
+                          Remove
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No Helpers found. </p>
+            )}
+            <div className="mt-8">
+              <button
+                onClick={handleBackToHousehold}
+                className="w-full bg-[#1c5b70] text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              >
+                Back to Household
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+};
+export default Helpers;
